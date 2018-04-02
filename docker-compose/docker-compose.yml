@@ -1,0 +1,48 @@
+version: '2'
+
+services:
+  data:
+    image: alpine:latest
+    volumes:
+      - /srv/taiga/pgdata:/var/lib/postgresql/data
+      - /mnt/data/taiga/media:/usr/local/taiga/media
+      - /srv/taiga/static:/usr/local/taiga/static
+
+  db:
+    image: postgres:9.6-alpine
+    expose:
+      - 5432
+    env_file:
+      - db.env
+    volumes_from:
+      - data
+    restart: always
+
+  taiga_back:
+    image: taiga-back:latest
+    hostname: taiga.ostroukh.me
+    links:
+      - db
+    env_file:
+      - db.env
+      - taiga.env
+    volumes_from:
+      - data
+    depends_on:
+      - db
+    expose:
+      - 8000
+    restart: always
+
+  taiga_front:
+    image: taiga-front:latest
+    hostname: taiga.ostroukh.me
+    links:
+      - taiga_back
+    volumes_from:
+      - data
+    ports:
+      - 0.0.0.0:17175:80
+    depends_on:
+      - taiga_back
+    restart: always
